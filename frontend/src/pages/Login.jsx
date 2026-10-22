@@ -1,11 +1,26 @@
-// Login.jsx - animated login / register screen
+// Login.jsx - login / register screen (landing page)
+// Layout: on phones a single column with the form; on large screens a brand/hero
+// panel on the left and the form on the right.
 import { useEffect, useRef, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { AnimatePresence, motion, useAnimationControls, useReducedMotion } from "motion/react";
+import {
+  Activity, Car, CircleAlert, Eye, EyeOff, IndianRupee, Loader2, MapPin, ShieldCheck, UserRound,
+} from "lucide-react";
 import { api } from "../api";
 import { useAuth } from "../auth";
+import { ThemeToggle } from "../theme";
+import { BrandMark } from "@/components/brand";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
+import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const ROLES = ["rider", "driver", "admin"];
+const ROLE_ICONS = { rider: UserRound, driver: Car, admin: ShieldCheck };
 // Demo accounts (same as in the README). Clicking one fills in the form.
 const DEMO = {
   rider: { id: "akhil@example.com", pw: "rider123", name: "Akhil" },
@@ -13,25 +28,109 @@ const DEMO = {
   admin: { id: "prakash", pw: "admin123", name: "Prakash" },
 };
 const EMPTY = { identifier: "", password: "", name: "", phone: "", license: "", zone: "", plate: "", model: "", color: "" };
+const cap = (s) => s[0].toUpperCase() + s.slice(1);
+const EASE = [0.22, 1, 0.36, 1];
 
-// Floating gradient shapes + a car driving along a road, behind the form
-function Backdrop() {
+// ---------------------------------------------------------------------------
+// Hero panel (large screens only): brand, short pitch and an example route card
+// ---------------------------------------------------------------------------
+const FEATURES = [
+  [MapPin, "Drivers in your zone, best rated first"],
+  [IndianRupee, "Upfront fares, promo codes applied instantly"],
+  [Activity, "Live status from request to drop-off"],
+];
+
+const ROUTE = "M10 55 C 90 55, 110 15, 170 20 S 260 50, 310 15";
+
+function RoutePreview() {
   const reduce = useReducedMotion();
   return (
-    <div className="backdrop" aria-hidden="true">
-      <motion.div className="blob b1" animate={{ x: [0, 60, -20, 0], y: [0, 40, 80, 0], scale: [1, 1.15, 0.95, 1] }}
-        transition={{ duration: 16, repeat: Infinity, ease: "easeInOut" }} />
-      <motion.div className="blob b2" animate={{ x: [0, -70, 30, 0], y: [0, -50, 20, 0], scale: [1, 0.9, 1.2, 1] }}
-        transition={{ duration: 19, repeat: Infinity, ease: "easeInOut" }} />
-      <motion.div className="blob b3" animate={{ x: [0, 40, -40, 0], y: [0, -30, 30, 0] }}
-        transition={{ duration: 14, repeat: Infinity, ease: "easeInOut" }} />
-      <div className="road"><div className="road-dash" /></div>
-      <motion.div className="road-car" style={reduce ? { left: "45%" } : undefined}
-        initial={{ x: "-20vw" }} animate={reduce ? { x: 0 } : { x: "120vw" }}
-        transition={{ duration: 11, repeat: Infinity, ease: "linear" }}>
-        <span style={{ display: "inline-block", transform: "scaleX(-1)" }}>🚖</span>
-      </motion.div>
+    // a small "map overlay" style glass card showing what a booked route looks like
+    <div className="rounded-xl border border-white/10 bg-white/[0.06] p-5 backdrop-blur-md">
+      <div className="flex items-center justify-between text-xs font-medium text-white/70">
+        <span>Example trip</span>
+        <span className="rounded-full bg-success/20 px-2.5 py-1 text-[#86EFAC]">Driver on the way</span>
+      </div>
+      <svg viewBox="0 0 320 70" className="mt-4 h-16 w-full" aria-hidden="true">
+        {/* faint dotted street underneath, then the gold route draws itself once on load */}
+        <path d={ROUTE} fill="none" style={{ stroke: "rgb(255 255 255 / 0.2)" }} strokeWidth="2" strokeLinecap="round" strokeDasharray="2 8" />
+        <motion.path d={ROUTE} fill="none" style={{ stroke: "var(--gold)" }} strokeWidth="3" strokeLinecap="round"
+          initial={reduce ? false : { pathLength: 0 }} animate={{ pathLength: 1 }}
+          transition={{ duration: 1.2, ease: EASE, delay: 0.4 }} />
+        <circle cx="10" cy="55" r="6" fill="#4ADE80" />
+        <circle cx="310" cy="15" r="6" fill="#F87171" />
+      </svg>
+      <div className="mt-3 grid grid-cols-2 gap-4 text-sm">
+        <div><div className="text-white/60">Pickup</div><div className="font-semibold text-white">Pondy Bazaar</div></div>
+        <div className="text-right"><div className="text-white/60">Drop-off</div><div className="font-semibold text-white">Kapaleeshwarar Temple</div></div>
+      </div>
+      <div className="mt-4 flex items-baseline justify-between border-t border-white/10 pt-4">
+        <span className="text-sm text-white/70">Economy · 3.96 km</span>
+        <span className="text-xl font-bold text-white">₹87.52</span>
+      </div>
     </div>
+  );
+}
+
+function Hero() {
+  const item = { hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: EASE } } };
+  return (
+    <aside className="relative hidden overflow-hidden bg-[#1B1B2F] p-10 text-white lg:flex lg:flex-col xl:p-14">
+      {/* soft brand glow + faint street grid, purely decorative */}
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0
+        bg-[radial-gradient(60%_50%_at_15%_10%,rgb(107_30_60/0.55),transparent_70%),radial-gradient(45%_40%_at_90%_85%,rgb(184_134_11/0.22),transparent_70%)]" />
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0 opacity-[0.07]
+        [background-image:linear-gradient(white_1px,transparent_1px),linear-gradient(90deg,white_1px,transparent_1px)] [background-size:44px_44px]" />
+
+      <motion.div className="relative flex flex-1 flex-col" initial="hidden" animate="show"
+        variants={{ show: { transition: { staggerChildren: 0.06 } } }}>
+        <motion.div variants={item}><BrandMark inverted className="text-white" /></motion.div>
+        <div className="my-auto max-w-md py-12">
+          <motion.h2 variants={item} className="text-4xl leading-tight font-bold tracking-tight text-balance xl:text-5xl">
+            Your city, one tap away.
+          </motion.h2>
+          <motion.p variants={item} className="mt-4 text-lg leading-relaxed text-white/75">
+            Book a ride across Chennai, see the fare before you go, and follow your driver live.
+          </motion.p>
+          <motion.ul variants={item} className="mt-8 space-y-3">
+            {FEATURES.map(([Icon, text]) => (
+              <li key={text} className="flex items-center gap-3 text-white/85">
+                <span className="inline-flex size-9 items-center justify-center rounded-md bg-white/10">
+                  <Icon className="size-4 text-gold" aria-hidden="true" />
+                </span>
+                {text}
+              </li>
+            ))}
+          </motion.ul>
+          <motion.div variants={item} className="mt-10"><RoutePreview /></motion.div>
+        </div>
+        <motion.p variants={item} className="text-sm text-white/55">Matched in real time by a Neo4j graph database.</motion.p>
+      </motion.div>
+    </aside>
+  );
+}
+
+// label + control + spacing, so every field looks the same
+function Field({ id, label, children }) {
+  return (
+    <div className="grid gap-2">
+      <Label htmlFor={id}>{label}</Label>
+      {children}
+    </div>
+  );
+}
+
+// fields that only appear in "create account" mode fade in (no height animation)
+function Reveal({ show, children }) {
+  return (
+    <AnimatePresence initial={false}>
+      {show && (
+        <motion.div className="grid gap-4" initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, transition: { duration: 0.12 } }} transition={{ duration: 0.22, ease: EASE }}>
+          {children}
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }
 
@@ -43,6 +142,7 @@ export default function Login() {
   const [zones, setZones] = useState([]);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [showPw, setShowPw] = useState(false);
   const passwordRef = useRef(null);
   const shake = useAnimationControls();
   const register = mode === "register";
@@ -78,116 +178,156 @@ export default function Login() {
       // Stay on this page: red box, shake, keep the username, clear ONLY the password, refocus it.
       setError(err.message);
       setForm((f) => ({ ...f, password: "" }));
-      shake.start({ x: [0, -14, 14, -10, 10, -5, 5, 0], transition: { duration: 0.5 } });
+      shake.start({ x: [0, -10, 10, -6, 6, 0], transition: { duration: 0.4 } });
       setBusy(false);
       setTimeout(() => passwordRef.current?.focus(), 0);
     }
   }
 
   const idLabel = role === "driver" ? "Phone number" : role === "admin" ? "Username" : "Email";
+  const idPlaceholder = role === "driver" ? "98765 00011" : role === "admin" ? "prakash" : "you@example.com";
 
   return (
-    <div className="login-page">
-      <Backdrop />
-      <div className="login-wrap">
-        <motion.div className="hero" initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
-          <motion.div className="logo" animate={{ y: [0, -8, 0] }} transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}>🚖</motion.div>
-          <h1>Ride<span>Graph</span></h1>
-          <p>Ride-hailing powered by a Neo4j graph</p>
-        </motion.div>
+    <div className="grid min-h-dvh lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)]">
+      <Hero />
 
-        <motion.div animate={shake}>
-          <motion.div className="card login-card" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.15 }}>
-            <div className="tabs" role="tablist">
+      <main className="flex flex-col px-4 py-5 sm:px-8">
+        {/* top row: brand (phones only, the hero shows it on large screens) + theme toggle */}
+        <div className="flex items-center justify-between">
+          <BrandMark className="lg:invisible" />
+          <ThemeToggle />
+        </div>
+
+        <motion.div className="mx-auto my-auto w-full max-w-sm py-8"
+          initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: EASE }}>
+          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{register ? "Create your account" : "Welcome back"}</h1>
+          <p className="mt-1.5 text-muted-foreground">
+            {register ? "Join as a rider or a driver in a minute." : "Sign in to book a ride, drive, or manage RideGraph."}
+          </p>
+
+          <motion.div animate={shake} className="mt-6">
+            <Tabs value={role} onValueChange={pickRole}>
+              <TabsList className="grid h-auto w-full grid-cols-3" aria-label="I am a">
+                {ROLES.map((r) => {
+                  const Icon = ROLE_ICONS[r];
+                  return (
+                    <TabsTrigger key={r} value={r} className="min-h-11 gap-1.5">
+                      <Icon aria-hidden="true" />{cap(r)}
+                    </TabsTrigger>
+                  );
+                })}
+              </TabsList>
+
+              <TabsContent value={role} className="mt-4">
+                <form onSubmit={submit} noValidate className="grid gap-4">
+                  <Reveal show={register}>
+                    <Field id="name" label="Full name">
+                      <Input id="name" value={form.name} onChange={set("name")} autoComplete="name" placeholder="Your name" />
+                    </Field>
+                  </Reveal>
+
+                  <Field id="identifier" label={idLabel}>
+                    <Input id="identifier" value={form.identifier} onChange={set("identifier")} autoComplete="username"
+                      type={role === "driver" ? "tel" : role === "rider" ? "email" : "text"} inputMode={role === "driver" ? "tel" : undefined}
+                      placeholder={idPlaceholder} aria-invalid={!!error || undefined} />
+                  </Field>
+
+                  <Reveal show={register && role === "rider"}>
+                    <Field id="phone" label="Phone">
+                      <Input id="phone" type="tel" inputMode="tel" value={form.phone} onChange={set("phone")} autoComplete="tel" />
+                    </Field>
+                  </Reveal>
+
+                  <Reveal show={register && role === "driver"}>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <Field id="license" label="Licence no.">
+                        <Input id="license" value={form.license} onChange={set("license")} />
+                      </Field>
+                      <Field id="zone" label="Home zone">
+                        <NativeSelect id="zone" className="w-full" value={form.zone} onChange={set("zone")}>
+                          {zones.length === 0 && <NativeSelectOption value="">Zones unavailable right now</NativeSelectOption>}
+                          {zones.map((z) => <NativeSelectOption key={z.zone_id} value={z.zone_id}>{z.zone_name}</NativeSelectOption>)}
+                        </NativeSelect>
+                      </Field>
+                      <Field id="plate" label="Plate number">
+                        <Input id="plate" value={form.plate} onChange={set("plate")} />
+                      </Field>
+                      <Field id="model" label="Vehicle model">
+                        <Input id="model" value={form.model} onChange={set("model")} />
+                      </Field>
+                    </div>
+                    <Field id="color" label="Vehicle colour">
+                      <Input id="color" value={form.color} onChange={set("color")} />
+                    </Field>
+                  </Reveal>
+
+                  <Field id="password" label="Password">
+                    <div className="relative">
+                      <Input id="password" ref={passwordRef} type={showPw ? "text" : "password"} value={form.password}
+                        onChange={set("password")} autoComplete={register ? "new-password" : "current-password"}
+                        className="pr-12" aria-invalid={!!error || undefined} aria-describedby={error ? "login-error" : undefined} />
+                      <button type="button" onClick={() => setShowPw((v) => !v)}
+                        aria-label={showPw ? "Hide password" : "Show password"} aria-pressed={showPw}
+                        className="absolute inset-y-0 right-0 inline-flex w-11 items-center justify-center rounded-r-sm text-muted-foreground transition-colors hover:text-foreground">
+                        {showPw ? <EyeOff className="size-4" aria-hidden="true" /> : <Eye className="size-4" aria-hidden="true" />}
+                      </button>
+                    </div>
+                  </Field>
+
+                  {/* error box, directly above the button */}
+                  <AnimatePresence>
+                    {error && (
+                      <motion.div key="err" initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, transition: { duration: 0.12 } }} transition={{ duration: 0.2 }}>
+                        <Alert variant="destructive" id="login-error" role="alert" className="border-destructive/30 bg-danger-soft">
+                          <CircleAlert aria-hidden="true" />
+                          <AlertDescription className="text-destructive">{error}</AlertDescription>
+                        </Alert>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  <Button type="submit" size="lg" className="mt-1 w-full" disabled={busy}>
+                    {busy && <Loader2 className="animate-spin" aria-hidden="true" />}
+                    {busy ? (register ? "Creating account..." : "Logging in...") : register ? "Create account" : "Login"}
+                  </Button>
+                </form>
+              </TabsContent>
+            </Tabs>
+          </motion.div>
+
+          {role !== "admin" && (
+            <p className="mt-5 text-center text-sm text-muted-foreground">
+              {register ? "Already have an account? " : "New here? "}
+              <Button type="button" variant="link" className="h-auto min-h-11 px-1 font-semibold"
+                onClick={() => { setMode(register ? "login" : "register"); setError(""); }}>
+                {register ? "Login" : "Create an account"}
+              </Button>
+            </p>
+          )}
+
+          {/* demo accounts: one tap fills in the form */}
+          <div className="mt-8">
+            <div className="flex items-center gap-3 text-xs font-medium text-muted-foreground">
+              <Separator className="flex-1" /> Try a demo account <Separator className="flex-1" />
+            </div>
+            <div className="mt-4 grid grid-cols-3 gap-2">
               {ROLES.map((r) => (
-                <button key={r} type="button" role="tab" aria-selected={role === r} className={role === r ? "active" : ""} onClick={() => pickRole(r)}>
-                  {role === r && <motion.span layoutId="tab-pill" className="pill" transition={{ type: "spring", stiffness: 420, damping: 32 }} />}
-                  <span className="tab-label">{r[0].toUpperCase() + r.slice(1)}</span>
-                </button>
+                <motion.button key={r} type="button" onClick={() => fillDemo(r)}
+                  whileHover={{ y: -2 }} whileTap={{ scale: 0.97 }} transition={{ duration: 0.15 }}
+                  aria-label={`Fill in the ${r} demo account (${DEMO[r].name})`}
+                  className="flex min-h-11 flex-col items-center gap-1.5 rounded-md border bg-card px-2 py-3 text-sm shadow-card transition-colors hover:border-primary/40 hover:bg-accent">
+                  <span className="inline-flex size-8 items-center justify-center rounded-full bg-primary-soft text-sm font-bold text-primary">
+                    {DEMO[r].name[0]}
+                  </span>
+                  <span className="font-semibold">{DEMO[r].name}</span>
+                  <span className="text-xs text-muted-foreground">{cap(r)}</span>
+                </motion.button>
               ))}
             </div>
-
-            <form onSubmit={submit} noValidate>
-              <AnimatePresence initial={false}>
-                {register && (
-                  <motion.div key="name" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="collapse-box">
-                    <label htmlFor="name">Full name</label>
-                    <input id="name" value={form.name} onChange={set("name")} autoComplete="name" />
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              <label htmlFor="identifier">{idLabel}</label>
-              <input id="identifier" value={form.identifier} onChange={set("identifier")} autoComplete="username"
-                type={role === "driver" ? "tel" : "text"} />
-
-              <AnimatePresence initial={false}>
-                {register && role === "rider" && (
-                  <motion.div key="phone" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="collapse-box">
-                    <label htmlFor="phone">Phone</label>
-                    <input id="phone" value={form.phone} onChange={set("phone")} autoComplete="tel" />
-                  </motion.div>
-                )}
-                {register && role === "driver" && (
-                  <motion.div key="driver" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="collapse-box">
-                    <div className="split">
-                      <div><label htmlFor="license">Licence no.</label><input id="license" value={form.license} onChange={set("license")} /></div>
-                      <div><label htmlFor="zone">Home zone</label>
-                        <select id="zone" value={form.zone} onChange={set("zone")}>
-                          {zones.map((z) => <option key={z.zone_id} value={z.zone_id}>{z.zone_name}</option>)}
-                        </select></div>
-                    </div>
-                    <div className="split">
-                      <div><label htmlFor="plate">Plate number</label><input id="plate" value={form.plate} onChange={set("plate")} /></div>
-                      <div><label htmlFor="model">Vehicle model</label><input id="model" value={form.model} onChange={set("model")} /></div>
-                    </div>
-                    <label htmlFor="color">Vehicle colour</label>
-                    <input id="color" value={form.color} onChange={set("color")} />
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              <label htmlFor="password">Password</label>
-              <input id="password" ref={passwordRef} type="password" value={form.password} onChange={set("password")}
-                autoComplete={register ? "new-password" : "current-password"} />
-
-              {/* red error box, directly above the button */}
-              <AnimatePresence>
-                {error && (
-                  <motion.div key="err" className="msg error" role="alert" initial={{ opacity: 0, height: 0, marginTop: 0 }}
-                    animate={{ opacity: 1, height: "auto", marginTop: 14 }} exit={{ opacity: 0, height: 0, marginTop: 0 }}>
-                    {error}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              <motion.button type="submit" className="big" disabled={busy} whileHover={busy ? undefined : { y: -2, scale: 1.01 }} whileTap={busy ? undefined : { scale: 0.97 }}>
-                {busy ? (register ? "Creating account..." : "Logging in...") : register ? "Create account" : "Login"}
-              </motion.button>
-            </form>
-
-            {role !== "admin" && (
-              <p className="switch">
-                {register ? "Already have an account? " : "New here? "}
-                <a href="#switch" onClick={(e) => { e.preventDefault(); setMode(register ? "login" : "register"); setError(""); }}>
-                  {register ? "Login" : "Create an account"}
-                </a>
-              </p>
-            )}
-          </motion.div>
-        </motion.div>
-
-        <motion.div className="card demo-card" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.3 }}>
-          <div className="meta">Demo accounts - click one to fill in the form</div>
-          <div className="chips">
-            {ROLES.map((r) => (
-              <motion.button key={r} type="button" className="chip" whileHover={{ y: -3, scale: 1.05 }} whileTap={{ scale: 0.93 }} onClick={() => fillDemo(r)}>
-                {DEMO[r].name} · {r[0].toUpperCase() + r.slice(1)}
-              </motion.button>
-            ))}
           </div>
         </motion.div>
-      </div>
+      </main>
     </div>
   );
 }
