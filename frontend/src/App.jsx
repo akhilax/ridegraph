@@ -2,6 +2,7 @@
 import { AnimatePresence, motion } from "motion/react";
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { RequireRole, useAuth } from "./auth";
+import { Navbar } from "./components/dashboard/app-shell";
 import { lazy, Suspense } from "react";
 import Login from "./pages/Login";
 // dashboards are loaded only when opened, so the login screen downloads less
@@ -31,28 +32,12 @@ function PageTransition({ children, legacy = false }) {
   );
 }
 
-function Topbar() {
-  const { session, signOut } = useAuth();
-  if (!session) return null;
-  return (
-    <div className="legacy">
-    <motion.header className="topbar" initial={{ y: -60 }} animate={{ y: 0 }} transition={{ type: "spring", stiffness: 260, damping: 26 }}>
-      <div className="brand">Ride<span>Graph</span><small>{session.role}</small></div>
-      <div className="who">
-        <span>Hi, <b>{session.user.name}</b></span>
-        <motion.button className="ghost" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.94 }} onClick={signOut}>Logout</motion.button>
-      </div>
-    </motion.header>
-    </div>
-  );
-}
-
 export default function App() {
   const location = useLocation();
   const { session } = useAuth();
   return (
     <>
-      <Topbar />
+      <Navbar />
       <Suspense fallback={<PageLoading />}>
       <AnimatePresence mode="wait">
         <Routes location={location} key={location.pathname}>
