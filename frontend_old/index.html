@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>RideGraph - Login</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="login-wrap">
+    <div class="hero anim">
+      <div class="logo">🚖</div>
+      <h1>Ride<span>Graph</span></h1>
+      <p>Ride-hailing powered by a Neo4j graph</p>
+    </div>
+
+    <div class="card anim d1">
+      <!-- choose who you are (the pill slides under the active tab) -->
+      <div class="tabs" id="roleTabs">
+        <div class="pill" id="pill"></div>
+        <button data-role="rider" class="active">Rider</button>
+        <button data-role="driver">Driver</button>
+        <button data-role="admin">Admin</button>
+      </div>
+
+      <form id="form" autocomplete="on" novalidate>
+        <div class="fields" id="fields">
+          <!-- register-only fields are shown/hidden by refresh() -->
+          <div id="regCommon" class="hidden"><label for="name">Full name</label><input id="name"></div>
+          <div><label for="identifier" id="idLabel">Email</label><input id="identifier"></div>
+          <div id="regPhone" class="hidden"><label for="phone">Phone</label><input id="phone"></div>
+          <div id="regDriver" class="hidden">
+            <div class="split">
+              <div><label for="license">Licence no.</label><input id="license"></div>
+              <div><label for="zone">Home zone</label><select id="zone"></select></div>
+            </div>
+            <div class="split">
+              <div><label for="plate">Plate number</label><input id="plate"></div>
+              <div><label for="model">Vehicle model</label><input id="model"></div>
+            </div>
+            <label for="color">Vehicle colour</label><input id="color">
+          </div>
+          <div><label for="password">Password</label><input id="password" type="password"></div>
+        </div>
+        <div id="msg"></div>
+        <button type="submit" id="submitBtn" class="big">Login</button>
+      </form>
+
+      <p class="switch" id="switchWrap"><span id="switchText">New here?</span>
+        <a href="#" id="switchLink">Create an account</a></p>
+    </div>
+
+    <!-- demo accounts: click a name to fill the form -->
+    <div class="card anim d2">
+      <details class="fold">
+        <summary>Demo accounts</summary>
+        <div class="inner">
+          <div class="meta">Click a name to fill in the login form.</div>
+          <div class="chips">
+            <button type="button" class="chip" data-demo="rider">Akhil · Rider</button>
+            <button type="button" class="chip" data-demo="driver">Praveen · Driver</button>
+            <button type="button" class="chip" data-demo="admin">Prakash · Admin</button>
+          </div>
+        </div>
+      </details>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    let role = "rider";       // rider | driver | admin
+    let mode = "login";       // login | register
+    const $ = id => document.getElementById(id);
+    const ROLES = ["rider", "driver", "admin"];
+    // Demo credentials (same ones listed in the README)
+    const DEMO = {
+      rider:  { id: "akhil@example.com", pw: "rider123" },
+      driver: { id: "9876500011",         pw: "driver123" },
+      admin:  { id: "prakash",            pw: "admin123" },
+    };
+
+    // Show/hide the right fields for the chosen role and mode.
+    function refresh() {
+      const reg = mode === "register";
+      $("pill").style.transform = `translateX(${ROLES.indexOf(role) * 100}%)`;
+      document.querySelectorAll("#roleTabs button").forEach(b => b.classList.toggle("active", b.dataset.role === role));
+      $("submitBtn").textContent = reg ? "Create account" : "Login";
+      $("idLabel").textContent = role === "driver" ? "Phone number" : role === "admin" ? "Username" : "Email";
+      $("identifier").type = role === "driver" ? "tel" : "text";
+      $("regCommon").classList.toggle("hidden", !reg);
+      $("regPhone").classList.toggle("hidden", !(reg && role === "rider"));
+      $("regDriver").classList.toggle("hidden", !(reg && role === "driver"));
+      $("switchWrap").classList.toggle("hidden", role === "admin");
+      $("switchText").textContent = reg ? "Already have an account?" : "New here?";
+      $("switchLink").textContent = reg ? "Login" : "Create an account";
+      showMsg("msg", "");
+    }
+
+    document.querySelectorAll("#roleTabs button").forEach(b => b.onclick = () => {
+      role = b.dataset.role;
+      if (role === "admin") mode = "login";
+      refresh();
+    });
+    $("switchLink").onclick = e => { e.preventDefault(); mode = mode === "login" ? "register" : "login"; refresh(); };
+
+    document.querySelectorAll("[data-demo]").forEach(b => b.onclick = () => {
+      role = b.dataset.demo; mode = "login"; refresh();
+      $("identifier").value = DEMO[role].id; $("password").value = DEMO[role].pw;
+    });
+
+    // Load zones for the driver registration dropdown.
+    api("GET", "/api/zones").then(zs => {
+      $("zone").innerHTML = zs.map(z => `<option value="${esc(z.zone_id)}">${esc(z.zone_name)}</option>`).join("");
+    }).catch(() => {});
+
+    // Hide the red error box as soon as the user starts typing again.
+    document.querySelectorAll("#form input, #form select").forEach(el =>
+      el.addEventListener("input", () => showMsg("msg", "")));
+
+    $("form").onsubmit = async e => {
+      e.preventDefault();
+      const btn = $("submitBtn");
+      btn.disabled = true;
+      btn.textContent = mode === "login" ? "Logging in..." : "Creating account...";
+      showMsg("msg", "");
+      try {
+        let res;
+        if (mode === "login") {
+          res = await api("POST", "/api/login", { role, identifier: $("identifier").value, password: $("password").value });
+        } else if (role === "rider") {
+          res = await api("POST", "/api/register", {
+            role, name: $("name").value, email: $("identifier").value,
+            phone: $("phone").value, password: $("password").value });
+        } else {
+          res = await api("POST", "/api/register", {
+            role, name: $("name").value, phone: $("identifier").value,
+            license_number: $("license").value, password: $("password").value,
+            zone_id: $("zone").value, plate_number: $("plate").value,
+            model: $("model").value, color: $("color").value });
+        }
+        saveSession(res.role, res.user);
+        location.href = res.role + ".html";
+      } catch (err) {
+        // Stay on this page: show the error, keep the username, clear ONLY the
+        // password, and put the cursor back in the password box for a retry.
+        showMsg("msg", err.message, "error");
+        $("password").value = "";
+        $("password").focus();
+        btn.disabled = false;
+        refresh_button();
+      }
+    };
+
+    function refresh_button() { $("submitBtn").textContent = mode === "register" ? "Create account" : "Login"; }
+
+    // Already logged in? Go straight to the dashboard.
+    const s = getSession();
+    if (s) location.href = s.role + ".html";
+    refresh();
+  </script>
+</body>
+</html>

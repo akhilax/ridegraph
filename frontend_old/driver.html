@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>RideGraph - Driver</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="topbar">
+    <div class="brand">Ride<span>Graph</span><small>Driver</small></div>
+    <div class="who">Hi, <b id="who"></b> <button class="ghost" onclick="logout()">Logout</button></div>
+  </div>
+
+  <div class="container">
+    <div class="stats" id="stats"><div class="loading">Loading...</div></div>
+    <p class="meta anim d1" id="subtitle" style="margin:-6px 0 18px"></p>
+
+    <div class="grid">
+      <div>
+        <div class="card anim d1 hidden" id="currentCard">
+          <h2>Current ride</h2>
+          <div id="current"></div>
+        </div>
+        <div class="card anim d2">
+          <h2>Requests in my zone <span class="count" id="reqCount">0</span></h2>
+          <div id="requests"><div class="loading">Loading...</div></div>
+        </div>
+      </div>
+      <div class="card anim d3">
+        <h2>History <span class="count" id="histCount">0</span></h2>
+        <div id="history"><div class="loading">Loading...</div></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    const me = requireRole("driver");
+    const $ = id => document.getElementById(id);
+    let statsBuilt = false;
+
+    // Four stat cards. They are built once (so the numbers can count up),
+    // afterwards only the text values are updated.
+    function updateStats(profile, earn) {
+      if (!statsBuilt) {
+        $("stats").innerHTML = `
+          <div class="stat"><div class="n" id="sEarn">₹0.00</div><div class="l">Total earnings</div></div>
+          <div class="stat"><div class="n" id="sRides">0</div><div class="l">Completed rides</div></div>
+          <div class="stat"><div class="n" id="sRating">★ 0</div><div class="l">Rating</div></div>
+          <div class="stat"><div class="n" id="sStatus"></div><div class="l">Status</div></div>`;
+        countUp($("sEarn"), earn.total_earnings, v => money(v));
+        countUp($("sRides"), earn.completed_rides);
+        countUp($("sRating"), profile.rating_avg, v => "★ " + v.toFixed(2));
+        statsBuilt = true;
+      } else {
+        $("sEarn").textContent = money(earn.total_earnings);
+        $("sRides").textContent = earn.completed_rides;
+        $("sRating").textContent = "★ " + Number(profile.rating_avg).toFixed(2);
+      }
+      $("sStatus").innerHTML = badge(profile.status);
+      $("subtitle").textContent = `${profile.zone_name} zone · ${profile.color} ${profile.model} · ${profile.plate_number}`;
+    }
+
+    function details(r) {
+      let h = `<dl class="kv"><dt>Rider</dt><dd>${esc(r.rider_name)} · ${esc(r.rider_phone)}</dd>`;
+      if (r.status === "completed") h += `<dt>Payment</dt><dd>${esc(r.payment_status)}${r.payment_status === "paid" ? " via " + esc(r.payment_method) : ""}</dd>`;
+      if (r.status === "completed" && r.rating_score != null) h += `<dt>Rating</dt><dd style="color:var(--gold)">${stars(r.rating_score)} ${esc(r.rating_comment)}</dd>`;
+      if (r.status === "cancelled") h += `<dt>Cancelled</dt><dd>by ${esc(r.cancelled_by)}: ${esc(r.cancel_reason)}</dd>`;
+      return h + `</dl>`;
+    }
+
+    async function load() {
+      try {
+        const [profile, requests, mine] = await Promise.all([
+          api("GET", `/api/drivers/${me.driver_id}`),
+          api("GET", `/api/drivers/${me.driver_id}/requests`),
+          api("GET", `/api/drivers/${me.driver_id}/rides`)]);
+        updateStats(profile, mine);
+
+        const current = mine.rides.filter(r => r.status === "accepted");
+        $("currentCard").classList.toggle("hidden", !current.length);
+        setIfChanged("current", current.map(r => rideItem(r, details(r) + `
+            <div class="row">
+              <button class="gold small" data-act="complete" data-id="${esc(r.ride_id)}">Complete ride</button>
+              <button class="ghost small" data-act="cancel" data-id="${esc(r.ride_id)}">Cancel</button>
+            </div>`, { open: true, live: true })).join(""));
+
+        const busy = profile.status !== "available";
+        $("reqCount").textContent = requests.length;
+        setIfChanged("requests", requests.length ? requests.map(r => rideItem(r, details(r) + `
+            <div class="row"><button class="small" data-act="accept" data-id="${esc(r.ride_id)}" ${busy ? "disabled title='Finish your current ride first'" : ""}>Accept ride</button></div>`)).join("")
+            : `<div class="empty">No open requests right now.<br>This page refreshes automatically.</div>`);
+
+        const past = mine.rides.filter(r => r.status !== "accepted");
+        $("histCount").textContent = past.length;
+        setIfChanged("history", past.length ? past.map(r => rideItem(r, details(r))).join("") : `<div class="empty">No rides yet.</div>`);
+      } catch (e) {
+        $("stats").innerHTML = `<div class="msg error">${esc(e.message)}</div>`;
+      }
+    }
+
+    document.addEventListener("click", async ev => {
+      const b = ev.target.closest("button[data-act]");
+      if (!b) return;
+      const id = b.dataset.id, act = b.dataset.act;
+      b.disabled = true;
+      try {
+        if (act === "accept") { await api("POST", `/api/rides/${id}/accept`, { driver_id: me.driver_id }); toast("Ride accepted"); }
+        if (act === "complete") { await api("POST", `/api/rides/${id}/complete`, { driver_id: me.driver_id }); toast("Ride completed"); }
+        if (act === "cancel") {
+          if (!confirm("Cancel this ride?")) { b.disabled = false; return; }
+          await api("POST", `/api/rides/${id}/cancel`, { cancelled_by: "driver", driver_id: me.driver_id, reason: "Cancelled by driver" });
+          toast("Ride cancelled");
+        }
+        load();
+      } catch (e) {
+        showMsg("msg-" + id, e.message, "error"); b.disabled = false;
+      }
+    });
+
+    if (me) { load(); setInterval(load, 5000); }  // poll for new requests every 5 s
+  </script>
+</body>
+</html>

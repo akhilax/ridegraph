@@ -1,0 +1,6 @@
+.env
+venv/
+venv_mac/
+__pycache__/
+*.pyc
+node_modules/
