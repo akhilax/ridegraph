@@ -44,7 +44,7 @@ export default function App() {
           <Route path="/" element={<Navigate to={session ? `/${session.role}` : "/login"} replace />} />
           <Route path="/login" element={<PageTransition><Login /></PageTransition>} />
           <Route path="/rider" element={<RequireRole role="rider"><PageTransition legacy><Rider /></PageTransition></RequireRole>} />
-          <Route path="/driver" element={<RequireRole role="driver"><PageTransition legacy><Driver /></PageTransition></RequireRole>} />
+          <Route path="/driver" element={<RequireRole role="driver"><PageTransition><Driver /></PageTransition></RequireRole>} />
           <Route path="/admin" element={<RequireRole role="admin"><PageTransition legacy><Admin /></PageTransition></RequireRole>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

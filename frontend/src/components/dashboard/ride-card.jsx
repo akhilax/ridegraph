@@ -21,29 +21,29 @@ export function RideCard({ ride, index = 0, defaultOpen = false, fresh = false, 
       transition={fresh ? { type: "spring", stiffness: 380, damping: 26 } : { duration: 0.3, delay: Math.min(index, 8) * 0.04, ease: EASE_OUT }}
       className={cn("overflow-hidden rounded-md border bg-card transition-[border-color,box-shadow] duration-200 hover:border-primary/30 hover:shadow-card",
         fresh && "border-primary/50 ring-2 ring-primary/25", className)}>
+      {/* two lines: route + fare on top, details + status below (reads well in narrow columns too) */}
       <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open} aria-controls={bodyId}
-        className="grid w-full grid-cols-[minmax(0,1fr)_auto_auto_auto] items-center gap-5 px-5 py-4 text-left transition-colors hover:bg-muted/40">
-        <div className="min-w-0">
-          <div className="flex min-w-0 items-center gap-2 font-semibold">
-            <span className="size-2 shrink-0 rounded-full bg-success" aria-hidden="true" />
-            <span className="truncate">{ride.pickup}</span>
-            <ArrowRight className="size-4 shrink-0 text-muted-foreground" aria-label="to" />
-            <span className="size-2 shrink-0 rounded-full bg-destructive" aria-hidden="true" />
-            <span className="truncate">{ride.dropoff}</span>
-            {fresh && <span className="ml-1 shrink-0 rounded-full bg-primary px-2 py-0.5 text-[11px] font-bold tracking-wide text-primary-foreground uppercase">New</span>}
-          </div>
-          <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
-            <span className="inline-flex items-center gap-1"><CalendarClock className="size-3.5" aria-hidden="true" />{fmtDate(ride.requested_at)}</span>
-            <span className="inline-flex items-center gap-1"><CarFront className="size-3.5" aria-hidden="true" />{ride.ride_type}</span>
-            <span className="inline-flex items-center gap-1"><Route className="size-3.5" aria-hidden="true" />{ride.distance_km} km</span>
-          </div>
+        className="grid w-full grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-x-4 gap-y-1.5 px-5 py-4 text-left transition-colors hover:bg-muted/40">
+        <div className="flex min-w-0 items-center gap-2 font-semibold">
+          <span className="size-2 shrink-0 rounded-full bg-success" aria-hidden="true" />
+          <span className="truncate" title={ride.pickup}>{ride.pickup}</span>
+          <ArrowRight className="size-4 shrink-0 text-muted-foreground" aria-label="to" />
+          <span className="size-2 shrink-0 rounded-full bg-destructive" aria-hidden="true" />
+          <span className="truncate" title={ride.dropoff}>{ride.dropoff}</span>
+          {fresh && <span className="ml-1 shrink-0 rounded-full bg-primary px-2 py-0.5 text-[11px] font-bold tracking-wide text-primary-foreground uppercase">New</span>}
         </div>
-        <span className="text-base font-bold tabular-nums">{money(ride.fare_amount)}</span>
-        <StatusBadge status={ride.status} />
-        <motion.span animate={{ rotate: open ? 180 : 0 }} transition={{ duration: 0.2 }} className="inline-flex text-muted-foreground">
+        <span className="text-right text-base font-bold tabular-nums">{money(ride.fare_amount)}</span>
+        <motion.span animate={{ rotate: open ? 180 : 0 }} transition={{ duration: 0.2 }}
+          className="row-span-2 inline-flex size-8 items-center justify-center rounded-full text-muted-foreground">
           <ChevronDown className="size-5" aria-hidden="true" />
           <span className="sr-only">{open ? "Hide details" : "Show details"}</span>
         </motion.span>
+        <div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+          <span className="inline-flex items-center gap-1"><CalendarClock className="size-3.5" aria-hidden="true" />{fmtDate(ride.requested_at)}</span>
+          <span className="inline-flex items-center gap-1"><CarFront className="size-3.5" aria-hidden="true" />{ride.ride_type}</span>
+          <span className="inline-flex items-center gap-1"><Route className="size-3.5" aria-hidden="true" />{ride.distance_km} km</span>
+        </div>
+        <span className="justify-self-end"><StatusBadge status={ride.status} /></span>
       </button>
 
       <AnimatePresence initial={false}>

@@ -1,24 +1,44 @@
 // Driver.jsx - earnings, requests in my zone (accept), current ride (complete), history
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
+import {
+  BadgeCheck, Car, CircleCheckBig, Gauge, History, Inbox, MapPin, Radio, Star, Wallet, WifiOff, XCircle,
+} from "lucide-react";
 import { api } from "../api";
 import { useAuth } from "../auth";
 import { useToast } from "../toast";
 import { usePolling } from "../hooks";
 import { money } from "../utils";
-import { Badge, ConfirmButton, Confetti, CountUp, FadeIn, RouteCar, Skeleton, SkeletonList, Stars, Stepper } from "../components/ride-ui";
-import RideRow from "../components/RideRow";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Page, PageHeader } from "@/components/dashboard/app-shell";
+import { StatCard, StatCardSkeleton } from "@/components/dashboard/stat-card";
+import { EmptyState, ErrorState, ListSkeleton, Panel } from "@/components/dashboard/panel";
+import { DetailList, RideCard } from "@/components/dashboard/ride-card";
+import { StatusBadge } from "@/components/dashboard/status-badge";
+import { Confetti, RouteLine, Stars, Stepper } from "@/components/dashboard/ride-visuals";
+import { ConfirmDialog } from "@/components/dashboard/confirm-dialog";
 
-// Rider + payment + rating info shown inside an expanded ride
-function Info({ ride }) {
-  return (
-    <dl className="kv">
-      <dt>Rider</dt><dd>{ride.rider_name} · {ride.rider_phone}</dd>
-      {ride.status === "completed" && (<><dt>Payment</dt><dd>{ride.payment_status}{ride.payment_status === "paid" ? ` via ${ride.payment_method}` : ""}</dd></>)}
-      {ride.status === "completed" && ride.rating_score != null && (<><dt>Rating</dt><dd><Stars value={ride.rating_score} readOnly /> {ride.rating_comment}</dd></>)}
-      {ride.status === "cancelled" && (<><dt>Cancelled</dt><dd>by {ride.cancelled_by}: {ride.cancel_reason}</dd></>)}
-    </dl>
-  );
+// Rider + payment + rating details shown inside an expanded ride
+function rideDetails(ride) {
+  return [
+    ["Rider", `${ride.rider_name} · ${ride.rider_phone}`],
+    ride.status === "completed" && ["Payment", (
+      <span className="inline-flex items-center gap-2">
+        <StatusBadge status={ride.payment_status === "paid" ? "paid" : "pending"} />
+        {ride.payment_status === "paid" && <span className="text-muted-foreground capitalize">via {ride.payment_method}</span>}
+      </span>
+    )],
+    ride.status === "completed" && ride.rating_score != null && ["Rating", (
+      <span className="inline-flex items-center gap-2"><Stars value={ride.rating_score} readOnly size="sm" />
+        {ride.rating_comment && <span className="text-muted-foreground">"{ride.rating_comment}"</span>}</span>
+    )],
+    ride.status === "cancelled" && ["Cancelled", `by ${ride.cancelled_by}: ${ride.cancel_reason}`],
+  ];
+}
+
+function InlineError({ text }) {
+  return text ? <p role="alert" className="text-sm font-medium text-destructive">{text}</p> : null;
 }
 
 export default function Driver() {
@@ -32,6 +52,9 @@ export default function Driver() {
   const [rideError, setRideError] = useState({});    // per-ride error text
   const [busy, setBusy] = useState(false);
   const [burst, setBurst] = useState(false);
+  // UI only: which requests arrived since the page opened (they get highlighted for a few seconds)
+  const seenRequests = useRef(null);
+  const [fresh, setFresh] = useState(() => new Set());
 
   const load = useCallback(async () => {
     try {
@@ -41,8 +64,22 @@ export default function Driver() {
         api("GET", `/api/drivers/${me.driver_id}/rides`),
       ]);
       setProfile(p); setRequests(r); setMine(m); setError("");
+
+      // highlight requests we haven't seen before (not on the very first load)
+      const ids = r.map((x) => x.ride_id);
+      if (seenRequests.current === null) {
+        seenRequests.current = new Set(ids);
+      } else {
+        const added = ids.filter((id) => !seenRequests.current.has(id));
+        ids.forEach((id) => seenRequests.current.add(id));
+        if (added.length) {
+          setFresh((f) => new Set([...f, ...added]));
+          toast(added.length === 1 ? "New ride request in your zone" : `${added.length} new ride requests in your zone`);
+          setTimeout(() => setFresh((f) => { const n = new Set(f); added.forEach((id) => n.delete(id)); return n; }), 8000);
+        }
+      }
     } catch (e) { setError(e.message); }
-  }, [me.driver_id]);
+  }, [me.driver_id, toast]);
   usePolling(load, 5000);                            // new requests appear without refreshing
 
   async function act(ride, action, body, okText, celebrate) {
@@ -62,86 +99,128 @@ export default function Driver() {
   const current = (mine?.rides || []).filter((r) => r.status === "accepted");
   const past = (mine?.rides || []).filter((r) => r.status !== "accepted");
   const available = profile?.status === "available";
-  const err = (id) => rideError[id] && <div className="msg error">{rideError[id]}</div>;
+  const firstName = (me.name || "").split(" ")[0];
 
   return (
-    <main className="container">
+    <Page>
       {burst && <Confetti onDone={stopBurst} />}
-      {error && !profile && <div className="msg error">{error}</div>}
+
+      <PageHeader
+        title={`Welcome back, ${firstName}`}
+        subtitle={profile ? (
+          <span className="flex flex-wrap items-center gap-x-5 gap-y-1">
+            <span className="inline-flex items-center gap-1.5"><MapPin className="size-4" aria-hidden="true" />{profile.zone_name} zone</span>
+            <span className="inline-flex items-center gap-1.5"><Car className="size-4" aria-hidden="true" />{profile.color} {profile.model}</span>
+            <span className="rounded-sm border bg-card px-2 py-0.5 font-mono text-xs font-semibold tracking-wider text-foreground">{profile.plate_number}</span>
+          </span>
+        ) : <Skeleton className="h-5 w-80" />}
+      />
+
+      {/* first load failed: nothing to show yet */}
+      {error && !profile && <ErrorState message={error} onRetry={load} className="mb-6" />}
+      {/* a later refresh failed: keep showing the last data */}
+      {error && profile && (
+        <div role="status" className="mb-6 flex items-center gap-2 rounded-md border border-warning/30 bg-warning-soft px-4 py-2.5 text-sm text-warning">
+          <WifiOff className="size-4" aria-hidden="true" />Connection problem. Retrying automatically...
+        </div>
+      )}
 
       {/* ----- stat cards that count up ----- */}
-      <div className="stats">
-        {loading ? [0, 1, 2, 3].map((i) => <Skeleton key={i} h={92} r={16} />) : (
+      <div className="mb-8 grid grid-cols-4 gap-5">
+        {loading ? [0, 1, 2, 3].map((i) => <StatCardSkeleton key={i} />) : (
           <>
-            <FadeIn i={0} className="stat"><div className="n"><CountUp value={mine.total_earnings} format={(v) => money(v)} /></div><div className="l">Total earnings</div></FadeIn>
-            <FadeIn i={1} className="stat"><div className="n"><CountUp value={mine.completed_rides} /></div><div className="l">Completed rides</div></FadeIn>
-            <FadeIn i={2} className="stat"><div className="n">★ <CountUp value={Number(profile.rating_avg)} format={(v) => v.toFixed(2)} /></div><div className="l">Rating</div></FadeIn>
-            <FadeIn i={3} className="stat"><div className="n"><Badge status={profile.status} /></div><div className="l">Status</div></FadeIn>
+            <StatCard i={0} icon={Wallet} tint="success" label="Total earnings" value={mine.total_earnings} format={(v) => money(v)} />
+            <StatCard i={1} icon={CircleCheckBig} tint="info" label="Completed rides" value={mine.completed_rides} />
+            <StatCard i={2} icon={Star} tint="gold" label="Rating" value={Number(profile.rating_avg)} format={(v) => v.toFixed(2)} hint="Average from riders" />
+            <StatCard i={3} icon={Gauge} tint="primary" label="Status" value={<StatusBadge status={profile.status} size="lg" />}
+              hint={available ? "You can accept requests" : "Finish your ride to accept more"} />
           </>
         )}
       </div>
-      {profile && <FadeIn i={4} className="meta subtitle">{profile.zone_name} zone · {profile.color} {profile.model} · {profile.plate_number}</FadeIn>}
 
-      <div className="grid">
-        <div>
+      <div className="grid grid-cols-12 items-start gap-6">
+        <div className="col-span-7 grid gap-6">
           {/* ----- ride in progress ----- */}
-          <AnimatePresence>
-            {current.length > 0 && (
-              <motion.div className="card" key="current" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, height: 0 }}>
-                <h2>Current ride</h2>
-                {current.map((r) => (
-                  <div key={r.ride_id} className="current-ride live">
-                    <div className="head"><b>{money(r.fare_amount)}</b> <span className="meta">{r.ride_type}</span></div>
-                    <Stepper status={r.status} />
-                    <RouteCar from={r.pickup} to={r.dropoff} status={r.status} distance={r.distance_km} />
-                    <Info ride={r} />
-                    <div className="row">
-                      <motion.button className="gold small" disabled={busy} whileHover={{ y: -2, scale: 1.04 }} whileTap={{ scale: 0.94 }}
-                        onClick={() => act(r, "complete", {}, "Ride completed 🎉", true)}>Complete ride</motion.button>
-                      <ConfirmButton label="Cancel" disabled={busy}
-                        onConfirm={() => act(r, "cancel", { cancelled_by: "driver", reason: "Cancelled by driver" }, "Ride cancelled")} />
-                    </div>
-                    {err(r.ride_id)}
+          <AnimatePresence initial={false}>
+            {current.map((r) => (
+              <motion.div key={r.ride_id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8, transition: { duration: 0.15 } }} transition={{ duration: 0.3 }}>
+                <Panel title="Current ride" className="border-primary/40 ring-2 ring-primary/15"
+                  description={`${r.ride_type} · ${r.distance_km} km`}
+                  actions={<span className="text-2xl font-bold tabular-nums">{money(r.fare_amount)}</span>}
+                  bodyClassName="grid gap-6">
+                  <Stepper status={r.status} />
+                  <RouteLine from={r.pickup} to={r.dropoff} status={r.status} distance={r.distance_km} />
+                  <DetailList items={rideDetails(r)} />
+                  <div className="flex items-center gap-3 border-t pt-5">
+                    <Button size="lg" className="bg-gold text-gold-foreground hover:bg-gold/90" disabled={busy}
+                      onClick={() => act(r, "complete", {}, "Ride completed 🎉", true)}>
+                      <BadgeCheck aria-hidden="true" />Complete ride
+                    </Button>
+                    <ConfirmDialog
+                      trigger={<Button size="lg" variant="outline" disabled={busy}><XCircle aria-hidden="true" />Cancel ride</Button>}
+                      title="Cancel this ride?" confirmLabel="Yes, cancel ride"
+                      description={`The rider at ${r.pickup} will be told the ride was cancelled by the driver.`}
+                      onConfirm={() => act(r, "cancel", { cancelled_by: "driver", reason: "Cancelled by driver" }, "Ride cancelled")} />
+                    <InlineError text={rideError[r.ride_id]} />
                   </div>
-                ))}
+                </Panel>
               </motion.div>
-            )}
+            ))}
           </AnimatePresence>
 
           {/* ----- open requests in my zone ----- */}
-          <FadeIn className="card" i={5}>
-            <h2>Requests in my zone {requests && <span className="count">{requests.length}</span>}</h2>
-            {requests === null ? <SkeletonList n={2} /> : requests.length === 0 ? (
-              <div className="empty">No open requests right now.<br />This page refreshes automatically.</div>
-            ) : (
-              <AnimatePresence>
-                {requests.map((r, i) => (
-                  <RideRow key={r.ride_id} ride={r} index={i} defaultOpen>
-                    <Info ride={r} />
-                    <div className="row">
-                      <motion.button className="small" disabled={busy || !available} title={available ? "" : "Finish your current ride first"}
-                        whileHover={{ y: -2, scale: 1.04 }} whileTap={{ scale: 0.94 }} onClick={() => act(r, "accept", {}, "Ride accepted")}>
-                        Accept ride
-                      </motion.button>
-                    </div>
-                    {err(r.ride_id)}
-                  </RideRow>
-                ))}
-              </AnimatePresence>
-            )}
-          </FadeIn>
+          <Panel title="Requests in my zone" count={requests?.length}
+            description={profile ? `Riders waiting for pickup in ${profile.zone_name}` : "Riders waiting for pickup"}
+            actions={(
+              <span className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                <Radio className="size-4 text-success" aria-hidden="true" />Live · updates every 5 s
+              </span>
+            )}>
+            {requests === null ? (error ? <EmptyState icon={WifiOff} title="Requests unavailable" description="They'll appear here once the connection is back." /> : <ListSkeleton rows={2} />)
+              : requests.length === 0 ? (
+                <EmptyState icon={Inbox} title="No open requests right now"
+                  description="New requests in your zone will pop up here automatically." />
+              ) : (
+                <div className="grid gap-3" aria-live="polite">
+                  {!available && (
+                    <p className="rounded-md bg-info-soft px-4 py-2.5 text-sm text-info">Finish your current ride to accept another request.</p>
+                  )}
+                  <AnimatePresence mode="popLayout" initial={false}>
+                    {/* display order only: brand-new requests are pinned to the top so they're seen */}
+                    {[...requests].sort((a, b) => fresh.has(b.ride_id) - fresh.has(a.ride_id)).map((r, i) => (
+                      <RideCard key={r.ride_id} ride={r} index={i} defaultOpen fresh={fresh.has(r.ride_id)}>
+                        <DetailList items={rideDetails(r)} />
+                        <div className="flex items-center gap-3">
+                          <Button disabled={busy || !available} onClick={() => act(r, "accept", {}, "Ride accepted")}>
+                            <CircleCheckBig aria-hidden="true" />Accept ride
+                          </Button>
+                          <InlineError text={rideError[r.ride_id]} />
+                        </div>
+                      </RideCard>
+                    ))}
+                  </AnimatePresence>
+                </div>
+              )}
+          </Panel>
         </div>
 
         {/* ----- history ----- */}
-        <FadeIn className="card" i={6}>
-          <h2>History {mine && <span className="count">{past.length}</span>}</h2>
-          {mine === null ? <SkeletonList n={3} /> : past.length === 0 ? <div className="empty">No rides yet.</div> : (
-            <AnimatePresence initial>
-              {past.map((r, i) => <RideRow key={r.ride_id} ride={r} index={i}><Info ride={r} /></RideRow>)}
-            </AnimatePresence>
-          )}
-        </FadeIn>
+        <Panel className="col-span-5" title="History" count={mine ? past.length : undefined}
+          description="Your completed and cancelled rides"
+          actions={<History className="size-5 text-muted-foreground" aria-hidden="true" />}>
+          {mine === null ? (error ? <EmptyState icon={WifiOff} title="History unavailable" /> : <ListSkeleton rows={4} />)
+            : past.length === 0 ? (
+              <EmptyState icon={History} title="No rides yet" description="Rides you complete or cancel will be listed here." />
+            ) : (
+              <div className="grid gap-3">
+                {past.map((r, i) => (
+                  <RideCard key={r.ride_id} ride={r} index={i}><DetailList items={rideDetails(r)} /></RideCard>
+                ))}
+              </div>
+            )}
+        </Panel>
       </div>
-    </main>
+    </Page>
   );
 }
