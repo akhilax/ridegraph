@@ -1,1 +1,0 @@
-import{ht as e,mt as t}from"./index-Ubo24CxM.js";var n=e(t(),1);function r(e,t){let r=(0,n.useRef)(e);(0,n.useEffect)(()=>{r.current=e}),(0,n.useEffect)(()=>{r.current();let e=setInterval(()=>r.current(),t);return()=>clearInterval(e)},[t])}export{r as t};
