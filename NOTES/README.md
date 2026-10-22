@@ -74,8 +74,12 @@ backend/
   .env            DB settings (password!)   .env.example = template
 frontend/
   src/pages/      Login.jsx, Rider.jsx, Driver.jsx, Admin.jsx
-  src/components/ ui.jsx (stepper, radar, confetti, stars, skeletons...), RideRow.jsx
-  src/            App.jsx (routes + page transitions), api.js, auth.jsx, toast.jsx, styles.css
+  src/components/dashboard/  shared dashboard pieces: navbar/page shell, stat card, ride card,
+                  status badge, panels + empty/loading/error states, stepper, route line,
+                  radar, stars, confetti, confirm dialog
+  src/components/ui/         shadcn/ui building blocks (button, input, card, dialog, table ...)
+  src/            App.jsx (routes + page transitions), api.js, auth.jsx, theme.jsx (light/dark),
+                  toast.jsx, index.css (design tokens: colours, radius, shadows, fonts)
   dist/           the BUILT website that Flask serves (needed to run without Node.js)
   vite.config.js  dev server + /api proxy to Flask
 frontend_old/     the previous plain HTML/JS frontend (backup, not used)

@@ -7,7 +7,6 @@ import { AuthProvider } from "./auth";
 import { ToastProvider } from "./toast";
 import { ThemeProvider } from "./theme";
 import "./index.css";
-import "./styles.css";
 
 // MotionConfig reducedMotion="user": if the person's OS has "reduce motion" switched
 // on, Framer Motion automatically turns off movement animations (fades still work).

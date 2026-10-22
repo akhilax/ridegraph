@@ -75,7 +75,7 @@ function RoutePreview() {
 function Hero() {
   const item = { hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: EASE } } };
   return (
-    <aside className="relative hidden overflow-hidden bg-[#1B1B2F] p-10 text-white lg:flex lg:flex-col xl:p-14">
+    <aside className="relative hidden overflow-hidden bg-navy p-10 text-white lg:flex lg:flex-col xl:p-14">
       {/* soft brand glow + faint street grid, purely decorative */}
       <div aria-hidden="true" className="pointer-events-none absolute inset-0
         bg-[radial-gradient(60%_50%_at_15%_10%,rgb(107_30_60/0.55),transparent_70%),radial-gradient(45%_40%_at_90%_85%,rgb(184_134_11/0.22),transparent_70%)]" />

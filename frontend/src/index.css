@@ -34,6 +34,9 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
 
+  /* fixed brand navy (the login hero panel), the same in light and dark mode */
+  --color-navy: #1B1B2F;
+
   /* RideSense extras: gold highlight + ride status colours */
   --color-gold: var(--gold);
   --color-gold-foreground: var(--gold-foreground);

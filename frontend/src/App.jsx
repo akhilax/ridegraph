@@ -21,10 +21,9 @@ function PageLoading() {
 }
 
 // Every page fades and slides in/out when the route changes (exit is faster than enter).
-// `legacy` = page not redesigned yet: it keeps its old look via the .legacy styles.
-function PageTransition({ children, legacy = false }) {
+function PageTransition({ children }) {
   return (
-    <motion.div className={legacy ? "legacy min-h-dvh" : undefined}
+    <motion.div
       initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0, transition: { duration: 0.28, ease: [0.22, 1, 0.36, 1] } }}
       exit={{ opacity: 0, y: -8, transition: { duration: 0.16, ease: "easeIn" } }}>
       {children}
@@ -45,7 +44,7 @@ export default function App() {
           <Route path="/login" element={<PageTransition><Login /></PageTransition>} />
           <Route path="/rider" element={<RequireRole role="rider"><PageTransition><Rider /></PageTransition></RequireRole>} />
           <Route path="/driver" element={<RequireRole role="driver"><PageTransition><Driver /></PageTransition></RequireRole>} />
-          <Route path="/admin" element={<RequireRole role="admin"><PageTransition legacy><Admin /></PageTransition></RequireRole>} />
+          <Route path="/admin" element={<RequireRole role="admin"><PageTransition><Admin /></PageTransition></RequireRole>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </AnimatePresence>
