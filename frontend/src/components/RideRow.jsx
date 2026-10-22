@@ -1,7 +1,7 @@
 // RideRow.jsx - one ride shown as a compact row that expands when clicked
 import { useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
-import { Badge } from "./ui";
+import { AnimatePresence, motion } from "motion/react";
+import { Badge } from "./ride-ui";
 import { fmtDate, money } from "../utils";
 
 export default function RideRow({ ride, index = 0, defaultOpen = false, live = false, children }) {

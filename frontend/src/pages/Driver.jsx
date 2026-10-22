@@ -1,12 +1,12 @@
 // Driver.jsx - earnings, requests in my zone (accept), current ride (complete), history
 import { useCallback, useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion } from "motion/react";
 import { api } from "../api";
 import { useAuth } from "../auth";
 import { useToast } from "../toast";
 import { usePolling } from "../hooks";
 import { money } from "../utils";
-import { Badge, ConfirmButton, Confetti, CountUp, FadeIn, RouteCar, Skeleton, SkeletonList, Stars, Stepper } from "../components/ui";
+import { Badge, ConfirmButton, Confetti, CountUp, FadeIn, RouteCar, Skeleton, SkeletonList, Stars, Stepper } from "../components/ride-ui";
 import RideRow from "../components/RideRow";
 
 // Rider + payment + rating info shown inside an expanded ride

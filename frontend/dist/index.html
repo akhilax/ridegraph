@@ -6,10 +6,19 @@
     <meta name="theme-color" content="#1B1B2F" />
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚖</text></svg>" />
     <title>RideGraph</title>
-    <script type="module" crossorigin src="/assets/index-Df8x6UDm.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-BXMp61Cv.css">
+    <script>
+      // apply light/dark before first paint (same rule as src/theme.jsx)
+      try {
+        var t = localStorage.getItem("ridegraph-theme") ||
+          (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+        if (t === "dark") document.documentElement.classList.add("dark");
+        document.documentElement.style.colorScheme = t;
+      } catch (e) {}
+    </script>
+    <script type="module" crossorigin src="/assets/index-Dsv6pc4l.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-Df8F4APo.css">
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root"></div>
   </body>
 </html>

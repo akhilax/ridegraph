@@ -1,5 +1,11 @@
-/* RideGraph styles - burgundy #6B1E3C, navy #1B1B2F, gold #B8860B */
-:root {
+/* styles.css - LEGACY styles for pages that have not been redesigned yet.
+   Everything is scoped under .legacy so it cannot leak into the new
+   Tailwind/shadcn pages. Delete this file once every page is migrated. */
+@keyframes shimmer { to { background-position: -200% 0; } }
+@keyframes glow { 0% { box-shadow: 0 0 0 0 rgba(184,134,11,.4); } 100% { box-shadow: 0 0 0 12px rgba(184,134,11,0); } }
+@keyframes roadmove { to { background-position: -56px 0; } }
+
+.legacy {
   --burgundy: #6B1E3C;
   --burgundy-soft: #f7ecf1;
   --navy: #1B1B2F;
@@ -11,11 +17,15 @@
   --ok: #2e7d32;
   --bad: #b3261e;
   --radius: 16px;
-}
-* { box-sizing: border-box; }
-html { scroll-behavior: smooth; }
-body { margin: 0; font-family: "Segoe UI", Roboto, Arial, sans-serif; background: var(--bg); color: var(--navy); line-height: 1.5; overflow-x: hidden; }
+  margin: 0; font-family: "Segoe UI", Roboto, Arial, sans-serif; background: var(--bg); color: var(--navy); line-height: 1.5; overflow-x: hidden;
+  color-scheme: light;
+/* RideGraph styles - burgundy #6B1E3C, navy #1B1B2F, gold #B8860B */
+
+
+
+
 h1, h2, h3, p { margin: 0; }
+h1, h2, h3 { font-weight: 700; }  /* Tailwind preflight removes the browser default */
 a { color: var(--burgundy); }
 .hidden { display: none !important; }
 
@@ -37,7 +47,7 @@ a { color: var(--burgundy); }
 .meta { color: var(--muted); font-size: .82rem; }
 .meta.center { text-align: center; margin-top: 4px; }
 .subtitle { margin: -6px 0 18px; }
-.collapse { overflow: hidden; }
+.collapse-box { overflow: hidden; }
 
 /* ---------- forms + buttons ---------- */
 label { display: block; font-size: .75rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin: 14px 0 5px; }
@@ -79,7 +89,7 @@ button.link:hover { text-decoration: underline; }
 
 /* ---------- skeleton loaders ---------- */
 .skeleton { background: linear-gradient(90deg, #ece7eb 25%, #f7f3f6 50%, #ece7eb 75%); background-size: 200% 100%; animation: shimmer 1.3s infinite linear; }
-@keyframes shimmer { to { background-position: -200% 0; } }
+
 
 /* ---------- ride type chooser ---------- */
 .types { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
@@ -122,7 +132,7 @@ button.link:hover { text-decoration: underline; }
 .current-ride { border: 2px solid var(--line); border-radius: 14px; padding: 14px; margin-bottom: 12px; }
 .current-ride.live { border-color: var(--gold); animation: glow 2s ease-out infinite; }
 .current-ride .head { display: flex; justify-content: space-between; align-items: baseline; font-size: 1.15rem; color: var(--burgundy); }
-@keyframes glow { 0% { box-shadow: 0 0 0 0 rgba(184,134,11,.4); } 100% { box-shadow: 0 0 0 12px rgba(184,134,11,0); } }
+
 
 /* ---------- ride rows ---------- */
 .ride { border: 1.5px solid var(--line); border-radius: 12px; margin-bottom: 10px; background: #fff; overflow: hidden; transition: border-color .25s, box-shadow .25s; }
@@ -156,7 +166,7 @@ button.link:hover { text-decoration: underline; }
 /* ---------- radar ---------- */
 .radar-wrap { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 34px 0 12px; overflow: hidden; }
 .radar { position: relative; width: 70px; height: 70px; display: grid; place-items: center; }
-.ring { position: absolute; inset: 0; border-radius: 50%; border: 2px solid var(--burgundy); background: rgba(107,30,60,.12); }
+.radar-ring { position: absolute; inset: 0; border-radius: 50%; border: 2px solid var(--burgundy); background: rgba(107,30,60,.12); }
 .radar-icon { position: relative; font-size: 1.6rem; }
 
 /* ---------- stats ---------- */
@@ -190,7 +200,7 @@ th { color: var(--muted); font-weight: 600; font-size: .72rem; text-transform: u
 .b3 { width: 240px; height: 240px; background: #4a4a8a; top: 40%; left: 55%; opacity: .2; }
 .road { position: absolute; left: 0; right: 0; bottom: 0; height: 56px; background: var(--navy); border-top: 3px solid var(--gold); }
 .road-dash { position: absolute; left: 0; right: 0; top: 26px; height: 4px; background: repeating-linear-gradient(90deg, #fff 0 28px, transparent 28px 56px); background-size: 56px 4px; animation: roadmove 1s linear infinite; opacity: .8; }
-@keyframes roadmove { to { background-position: -56px 0; } }
+
 .road-car { position: absolute; bottom: 30px; font-size: 2.2rem; line-height: 1; }
 .login-wrap { position: relative; max-width: 430px; margin: 0 auto; padding: 36px 16px 90px; }
 .hero { text-align: center; margin-bottom: 22px; }
@@ -213,4 +223,5 @@ th { color: var(--muted); font-weight: 600; font-size: .72rem; text-transform: u
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; scroll-behavior: auto !important; }
   .skeleton { animation: none; }
+}
 }

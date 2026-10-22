@@ -1,9 +1,9 @@
 // Admin.jsx - statistics for the whole system
 import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { api } from "../api";
 import { money } from "../utils";
-import { CountUp, FadeIn, Skeleton } from "../components/ui";
+import { CountUp, FadeIn, Skeleton } from "../components/ride-ui";
 
 export default function Admin() {
   const [stats, setStats] = useState(null);

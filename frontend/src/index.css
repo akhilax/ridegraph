@@ -1,0 +1,165 @@
+/* index.css - RideSense design system (direction A: "Transit Minimal").
+   Tailwind v4 + shadcn/ui tokens. Components use these tokens through
+   Tailwind classes (bg-primary, text-muted-foreground, shadow-card, ...),
+   never raw hex values, so light and dark mode both stay consistent. */
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "@fontsource-variable/plus-jakarta-sans";
+
+/* dark mode is a .dark class on <html> (set by theme.jsx, follows the OS by default) */
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --font-sans: "Plus Jakarta Sans Variable", ui-sans-serif, system-ui, "Segoe UI", sans-serif;
+  --font-heading: var(--font-sans);
+
+  /* shadcn semantic colours */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* RideSense extras: gold highlight + ride status colours */
+  --color-gold: var(--gold);
+  --color-gold-foreground: var(--gold-foreground);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-danger-soft: var(--danger-soft);
+  --color-primary-soft: var(--primary-soft);
+
+  /* corner radius scale: 8 inputs/badges, 12 buttons, 16 cards, 24 sheets/modals */
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+  --radius-2xl: 1.75rem;
+
+  /* three soft elevation levels (dark mode leans on borders instead) */
+  --shadow-card: var(--elev-1);
+  --shadow-float: var(--elev-2);
+  --shadow-modal: var(--elev-3);
+
+  /* motion: short and ease-out; exits faster than entrances */
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+:root {
+  --radius: 0.75rem;
+  --background: #F7F5F6;
+  --foreground: #1B1B2F;
+  --card: #FFFFFF;
+  --card-foreground: #1B1B2F;
+  --popover: #FFFFFF;
+  --popover-foreground: #1B1B2F;
+  --primary: #6B1E3C;            /* burgundy - 11.2:1 with white */
+  --primary-foreground: #FFFFFF;
+  --primary-soft: #F7ECF1;
+  --secondary: #F1ECEF;
+  --secondary-foreground: #1B1B2F;
+  --muted: #F1ECEF;
+  --muted-foreground: #5F5B66;   /* 6.1:1 on background */
+  --accent: #F7ECF1;
+  --accent-foreground: #6B1E3C;
+  --destructive: #B91C1C;
+  --danger-soft: #FDECEC;
+  --border: #E6E0E4;
+  --input: #DDD5DA;
+  --ring: #6B1E3C;
+  --gold: #B8860B;               /* fill only, with navy text (5.2:1) */
+  --gold-foreground: #1B1B2F;
+  --success: #15803D;
+  --success-soft: #E8F5EC;
+  --info: #1D4ED8;
+  --info-soft: #E8EEFC;
+  --warning: #B45309;
+  --warning-soft: #FDF1E3;
+  --elev-1: 0 1px 2px rgb(27 27 47 / 0.04), 0 2px 8px rgb(27 27 47 / 0.05);
+  --elev-2: 0 4px 12px rgb(27 27 47 / 0.07), 0 12px 32px rgb(27 27 47 / 0.08);
+  --elev-3: 0 12px 24px rgb(27 27 47 / 0.12), 0 32px 64px rgb(27 27 47 / 0.16);
+}
+
+.dark {
+  --background: #0E0E18;
+  --foreground: #F4F2F5;
+  --card: #17172A;
+  --card-foreground: #F4F2F5;
+  --popover: #1F1F35;
+  --popover-foreground: #F4F2F5;
+  --primary: #E58BAA;            /* rose - burgundy is unreadable on dark (1.7:1) */
+  --primary-foreground: #1B1B2F;
+  --primary-soft: #2B1D31;
+  --secondary: #1F1F35;
+  --secondary-foreground: #F4F2F5;
+  --muted: #1F1F35;
+  --muted-foreground: #A6A1AE;   /* 7.0:1 on card */
+  --accent: #2B1D31;
+  --accent-foreground: #F2B8CC;
+  --destructive: #F87171;
+  --danger-soft: #331A22;
+  --border: rgb(255 255 255 / 0.09);
+  --input: rgb(255 255 255 / 0.14);
+  --ring: #E58BAA;
+  --gold: #D4A73C;
+  --gold-foreground: #1B1B2F;
+  --success: #4ADE80;
+  --success-soft: #14291E;
+  --info: #60A5FA;
+  --info-soft: #172338;
+  --warning: #FBBF24;
+  --warning-soft: #2E2414;
+  --elev-1: 0 0 0 1px rgb(255 255 255 / 0.06);
+  --elev-2: 0 0 0 1px rgb(255 255 255 / 0.08), 0 12px 32px rgb(0 0 0 / 0.45);
+  --elev-3: 0 0 0 1px rgb(255 255 255 / 0.1), 0 32px 64px rgb(0 0 0 / 0.6);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    @apply font-sans;
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    min-height: 100dvh;
+  }
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+  /* one clear keyboard focus style everywhere (never removed) */
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+}
+
+/* Reduced motion: CSS animations stop; Framer Motion is handled by <MotionConfig reducedMotion="user"> */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

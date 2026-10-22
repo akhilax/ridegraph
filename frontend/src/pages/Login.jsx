@@ -1,7 +1,7 @@
 // Login.jsx - animated login / register screen
 import { useEffect, useRef, useState } from "react";
 import { Navigate } from "react-router-dom";
-import { AnimatePresence, motion, useAnimationControls, useReducedMotion } from "framer-motion";
+import { AnimatePresence, motion, useAnimationControls, useReducedMotion } from "motion/react";
 import { api } from "../api";
 import { useAuth } from "../auth";
 
@@ -110,7 +110,7 @@ export default function Login() {
             <form onSubmit={submit} noValidate>
               <AnimatePresence initial={false}>
                 {register && (
-                  <motion.div key="name" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="collapse">
+                  <motion.div key="name" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="collapse-box">
                     <label htmlFor="name">Full name</label>
                     <input id="name" value={form.name} onChange={set("name")} autoComplete="name" />
                   </motion.div>
@@ -123,13 +123,13 @@ export default function Login() {
 
               <AnimatePresence initial={false}>
                 {register && role === "rider" && (
-                  <motion.div key="phone" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="collapse">
+                  <motion.div key="phone" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="collapse-box">
                     <label htmlFor="phone">Phone</label>
                     <input id="phone" value={form.phone} onChange={set("phone")} autoComplete="tel" />
                   </motion.div>
                 )}
                 {register && role === "driver" && (
-                  <motion.div key="driver" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="collapse">
+                  <motion.div key="driver" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="collapse-box">
                     <div className="split">
                       <div><label htmlFor="license">Licence no.</label><input id="license" value={form.license} onChange={set("license")} /></div>
                       <div><label htmlFor="zone">Home zone</label>

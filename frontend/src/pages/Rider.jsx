@@ -1,12 +1,12 @@
 // Rider.jsx - book a ride, see fare + nearby drivers, track status, pay, rate, history
 import { useCallback, useEffect, useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion } from "motion/react";
 import { api } from "../api";
 import { useAuth } from "../auth";
 import { useToast } from "../toast";
 import { usePolling } from "../hooks";
 import { fmtDate, money, sleep } from "../utils";
-import { Badge, ConfirmButton, Confetti, CountUp, FadeIn, Radar, RouteCar, SkeletonList, Skeleton, Stars, Stepper } from "../components/ui";
+import { Badge, ConfirmButton, Confetti, CountUp, FadeIn, Radar, RouteCar, SkeletonList, Skeleton, Stars, Stepper } from "../components/ride-ui";
 import RideRow from "../components/RideRow";
 
 const ACTIVE = ["requested", "accepted"];
@@ -217,7 +217,7 @@ export default function Rider() {
               </button>
               <AnimatePresence initial={false}>
                 {promoOpen && (
-                  <motion.div className="collapse" initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }}>
+                  <motion.div className="collapse-box" initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }}>
                     <input value={promo} onChange={(e) => setPromo(e.target.value)} placeholder="e.g. WELCOME20" aria-label="Promo code" />
                   </motion.div>
                 )}

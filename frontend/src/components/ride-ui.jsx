@@ -1,6 +1,6 @@
-// ui.jsx - small animated building blocks used all over the app
-import { useEffect, useMemo, useRef, useState } from "react";
-import { motion, animate, useReducedMotion, AnimatePresence } from "framer-motion";
+// ride-ui.jsx - small animated building blocks for the ride screens
+import { useEffect, useRef, useState } from "react";
+import { motion, animate, useReducedMotion, AnimatePresence } from "motion/react";
 
 // ---------- status badge ----------
 export function Badge({ status }) {
@@ -33,15 +33,15 @@ export function FadeIn({ i = 0, y = 16, className, children, ...rest }) {
 export function CountUp({ value, format = (v) => Math.round(v), duration = 1.1 }) {
   const reduce = useReducedMotion();
   const from = useRef(0);
-  const [text, setText] = useState(() => format(reduce ? value : 0));
+  const [text, setText] = useState(() => format(0));
   useEffect(() => {
-    if (reduce) { setText(format(value)); from.current = value; return; }
+    if (reduce) return;                      // reduced motion: the final value is shown directly below
     const controls = animate(from.current, value, { duration, ease: "easeOut", onUpdate: (v) => setText(format(v)) });
     from.current = value;
     return () => controls.stop();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value, reduce]);
-  return <span>{text}</span>;
+  return <span>{reduce ? format(value) : text}</span>;
 }
 
 // ---------- star rating that bounces when you pick a star ----------
@@ -64,9 +64,9 @@ export function Stars({ value, onChange, readOnly = false }) {
 
 // ---------- confetti burst (success!) ----------
 const COLORS = ["#6B1E3C", "#B8860B", "#1B1B2F", "#e6b422", "#c2527a", "#2e7d32"];
-export function Confetti({ onDone }) {
-  const reduce = useReducedMotion();
-  const pieces = useMemo(() => Array.from({ length: 70 }, (_, i) => ({
+// random pieces are created once per burst (outside render, see useState below)
+function makePieces() {
+  return Array.from({ length: 70 }, (_, i) => ({
     id: i,
     x: (Math.random() - 0.5) * 900,
     up: -(Math.random() * 380 + 140),
@@ -74,7 +74,11 @@ export function Confetti({ onDone }) {
     color: COLORS[i % COLORS.length],
     size: 6 + Math.random() * 8,
     delay: Math.random() * 0.15,
-  })), []);
+  }));
+}
+export function Confetti({ onDone }) {
+  const reduce = useReducedMotion();
+  const [pieces] = useState(makePieces);
   useEffect(() => {
     const t = setTimeout(() => onDone && onDone(), 2700);
     return () => clearTimeout(t);
@@ -98,7 +102,7 @@ export function Radar({ text = "Finding nearby drivers..." }) {
     <div className="radar-wrap" role="status">
       <div className="radar">
         {[0, 1, 2].map((i) => (
-          <motion.span key={i} className="ring" initial={{ scale: 0.2, opacity: 0.7 }}
+          <motion.span key={i} className="radar-ring" initial={{ scale: 0.2, opacity: 0.7 }}
             animate={{ scale: 2.6, opacity: 0 }}
             transition={{ duration: 2.1, repeat: Infinity, delay: i * 0.7, ease: "easeOut" }} />
         ))}
