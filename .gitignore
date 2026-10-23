@@ -4,3 +4,7 @@ venv_mac/
 __pycache__/
 *.pyc
 node_modules/
+
+# macOS metadata files created on USB drives
+.DS_Store
+._*
