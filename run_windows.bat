@@ -2,7 +2,7 @@
 REM ============================================================
 REM  RideGraph - one-click setup and run (works from any drive)
 REM  Needs: Python installed, and Neo4j running (ridegraph-db).
-REM  Node.js is NOT needed: the website is already built in frontend\dist.
+REM  Node.js is NOT needed: the website is already built in src\frontend\dist.
 REM ============================================================
 setlocal
 set "ROOT=%~dp0"
@@ -28,30 +28,30 @@ if not exist "%ROOT%venv\Scripts\python.exe" (
 )
 
 echo [3/6] Installing packages...
-"%ROOT%venv\Scripts\python.exe" -m pip install --quiet -r "%ROOT%backend\requirements.txt"
+"%ROOT%venv\Scripts\python.exe" -m pip install --quiet -r "%ROOT%src\backend\requirements.txt"
 if errorlevel 1 ( echo ERROR: pip install failed. Check your internet. & pause & exit /b 1 )
 
 echo [4/6] Checking the website files...
-if exist "%ROOT%frontend\dist\index.html" (
+if exist "%ROOT%src\frontend\dist\index.html" (
     echo Website is already built. OK.
 ) else (
     REM dist is missing: build it, but only if Node.js is available
     where npm >nul 2>&1
     if errorlevel 1 (
-        echo ERROR: frontend\dist is missing and Node.js is not installed.
-        echo Copy the frontend\dist folder from the original project, or install Node.js and run this again.
+        echo ERROR: src\frontend\dist is missing and Node.js is not installed.
+        echo Copy the src\frontend\dist folder from the original project, or install Node.js and run this again.
         pause & exit /b 1
     )
     echo Building the website with Node.js ^(first time only^)...
-    pushd "%ROOT%frontend"
+    pushd "%ROOT%src\frontend"
     call npm install
     call npm run build
     popd
-    if not exist "%ROOT%frontend\dist\index.html" ( echo ERROR: website build failed. & pause & exit /b 1 )
+    if not exist "%ROOT%src\frontend\dist\index.html" ( echo ERROR: website build failed. & pause & exit /b 1 )
 )
 
 echo [5/6] Loading seed data into Neo4j...
-cd /d "%ROOT%backend"
+cd /d "%ROOT%src\backend"
 "%ROOT%venv\Scripts\python.exe" seed.py
 if errorlevel 1 (
     echo.

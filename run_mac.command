@@ -2,7 +2,7 @@
 # ============================================================
 #  RideGraph - one-click setup and run for macOS
 #  Needs: Python 3 (python3) and Neo4j running (ridegraph-db).
-#  Node.js is NOT needed: the website is already built in frontend/dist.
+#  Node.js is NOT needed: the website is already built in src/frontend/dist.
 #
 #  HOW TO START (first time): open Terminal and run
 #      bash "/path/to/RideSense/run_mac.command"
@@ -34,27 +34,27 @@ if [ ! -x "$VENV/bin/python" ]; then
 fi
 
 echo "[3/6] Installing packages..."
-"$VENV/bin/python" -m pip install --quiet -r "$ROOT/backend/requirements.txt" || { echo "ERROR: pip install failed. Check your internet."; read -r -p "Press Enter to close..." _; exit 1; }
+"$VENV/bin/python" -m pip install --quiet -r "$ROOT/src/backend/requirements.txt" || { echo "ERROR: pip install failed. Check your internet."; read -r -p "Press Enter to close..." _; exit 1; }
 
 echo "[4/6] Checking the website files..."
-if [ -f "$ROOT/frontend/dist/index.html" ]; then
+if [ -f "$ROOT/src/frontend/dist/index.html" ]; then
     echo "Website is already built. OK."
 elif command -v npm >/dev/null 2>&1; then
     echo "Building the website with Node.js (first time only)..."
-    (cd "$ROOT/frontend" && npm install && npm run build)
-    [ -f "$ROOT/frontend/dist/index.html" ] || { echo "ERROR: website build failed."; read -r -p "Press Enter to close..." _; exit 1; }
+    (cd "$ROOT/src/frontend" && npm install && npm run build)
+    [ -f "$ROOT/src/frontend/dist/index.html" ] || { echo "ERROR: website build failed."; read -r -p "Press Enter to close..." _; exit 1; }
 else
-    echo "ERROR: frontend/dist is missing and Node.js is not installed."
-    echo "Copy the frontend/dist folder from the original project, or install Node.js and run this again."
+    echo "ERROR: src/frontend/dist is missing and Node.js is not installed."
+    echo "Copy the src/frontend/dist folder from the original project, or install Node.js and run this again."
     read -r -p "Press Enter to close..." _; exit 1
 fi
 
 echo "[5/6] Loading seed data into Neo4j..."
-cd "$ROOT/backend" || exit 1
+cd "$ROOT/src/backend" || exit 1
 if ! "$VENV/bin/python" seed.py; then
     echo
     echo "Could not reach Neo4j. Open Neo4j Desktop, click Start on your database,"
-    echo "wait until it says RUNNING (password must match backend/.env), then run this again."
+    echo "wait until it says RUNNING (password must match src/backend/.env), then run this again."
     read -r -p "Press Enter to close..." _; exit 1
 fi
 

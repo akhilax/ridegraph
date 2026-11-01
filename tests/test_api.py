@@ -1,6 +1,6 @@
 """
 test_api.py - tests every endpoint with a full ride flow.
-Start the Flask server first (python app.py), then run:  python test_api.py
+Start the Flask server first (src/backend/app.py), then run:  python tests/test_api.py
 Uses only the standard library, so it needs no extra packages.
 """
 import json
@@ -8,6 +8,10 @@ import sys
 import time
 import urllib.request
 import urllib.error
+import os
+
+# test_api.py lives in tests/; the cleanup step imports db.py/queries.py from src/backend
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "src", "backend"))
 
 BASE = "http://127.0.0.1:5000"   # 127.0.0.1 avoids a slow IPv6 lookup on Windows
 passed = failed = 0
