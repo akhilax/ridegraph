@@ -10,7 +10,7 @@
 |---|---|
 | Akhil Gokul | 25BCE5009 |
 | Praveen  Sakthi S | 25BCE1605 |
-| Prakash V | 25BCE1769 |
+| Prakash  V | 25BCE1769 |
 
 ## Problem statement
 
