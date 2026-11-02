@@ -1,4 +1,4 @@
-# RideGraph: A Graph-Database Ride-Hailing Platform
+# RideGraph: A Graph-Database Ride-Hailing Platform 
 
 **BACSE202 – Database Management Systems | Fall Semester 2026–2027 | Faculty: Dr. S. Geetha | Slot: D1 + TD1**
 
