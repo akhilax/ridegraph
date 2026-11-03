@@ -1,4 +1,4 @@
-# RideGraph: A Graph-Database Ride-Hailing Platform
+# RideGraph: A Graph-Database Ride-Hailing Platform 
 
 **BACSE202 – Database Management Systems | Fall Semester 2026–2027 | Faculty: Dr. S. Geetha | Slot: D1 + TD1**
 
@@ -9,8 +9,8 @@
 | Name | Register No. |
 |---|---|
 | Akhil Gokul | 25BCE5009 |
-| Praveen Sakthi S | 25BCE1605 |
-| Prakash V | 25BCE1769 |
+| Praveen  Sakthi S | 25BCE1605 |
+| Prakash  V | 25BCE1769 |
 
 ## Problem statement
 
