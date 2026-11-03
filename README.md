@@ -2,7 +2,7 @@
 
 **BACSE202 – Database Management Systems | Fall Semester 2026–2027 | Faculty: Dr. S. Geetha | Slot: D1 + TD1**
 
-**Demo video:** YOUTUBE_LINK_HERE
+**Demo video:** https://drive.google.com/file/d/11rI7FD1uJiBr3lQKsv9nnGIfxgUtdqhg/view
 
 ## Team
 
