@@ -1,11 +1,11 @@
 # RideGraph - Viva Notes
 
 ## 1. Three-tier architecture
-* **Presentation tier** - a **React** single-page app (built with **Vite**, animated with **Framer Motion**) in `frontend/src`. It only shows data and sends `fetch()` requests to `/api/...`.
-* **Application tier** - Flask (`backend/app.py`). Validates input, applies business rules (fare, who may accept/cancel), calls Neo4j, returns JSON with proper status codes (400/401/403/404/409).
+* **Presentation tier** - a **React** single-page app (built with **Vite**, animated with **Framer Motion**) in `src/frontend/src`. It only shows data and sends `fetch()` requests to `/api/...`.
+* **Application tier** - Flask (`src/backend/app.py`). Validates input, applies business rules (fare, who may accept/cancel), calls Neo4j, returns JSON with proper status codes (400/401/403/404/409).
 * **Data tier** - Neo4j graph database, accessed through the official Python driver (`db.py`). All Cypher is in `queries.py`.
 
-The browser never talks to the database directly; only Flask does. `npm run build` turns the React code into plain static files in `frontend/dist`, and Flask serves them, so one URL (http://localhost:5000) runs everything and Node.js is not needed to *run* the project.
+The browser never talks to the database directly; only Flask does. `npm run build` turns the React code into plain static files in `src/frontend/dist`, and Flask serves them, so one URL (http://localhost:5000) runs everything and Node.js is not needed to *run* the project.
 
 ## 1b. Tech stack and why
 | Technology | Why we use it |
@@ -88,8 +88,8 @@ RETURN z.zone_name, count(r) AS rides ORDER BY rides DESC
 Extra possible questions:
 * **What is the ER-to-graph mapping?** Each entity -> node label, each relationship -> relationship type, foreign keys disappear into relationships.
 * **Why is there no JWT?** Kept simple for a college project; limitation: the API trusts the ids sent by the browser.
-* **How did you test it?** `test_api.py` runs 53 checks through a full ride flow (login -> request -> accept -> complete -> pay -> rate) plus cancellation and error cases.
+* **How did you test it?** `tests/test_api.py` runs 73 checks through a full ride flow (login -> request -> accept -> complete -> pay -> rate) plus cancellation and error cases.
 * **What is `OPTIONAL MATCH`?** Cypher's LEFT JOIN: keeps the row (with null) when the optional pattern is missing, e.g. a ride with no driver yet.
 * **Why React and Framer Motion?** React keeps the UI in sync with the data using components and state; Framer Motion gives declarative animations and respects the user's "reduce motion" setting.
-* **How does Flask serve a React app?** `npm run build` creates static files in `frontend/dist`; Flask serves them and returns `index.html` for any non-API URL so React Router can handle pages like `/rider` (refreshing still works).
+* **How does Flask serve a React app?** `npm run build` creates static files in `src/frontend/dist`; Flask serves them and returns `index.html` for any non-API URL so React Router can handle pages like `/rider` (refreshing still works).
 * **Why does a wrong login give one generic message?** Saying only "Incorrect username or password" never reveals whether the username exists, which prevents attackers from discovering valid accounts.

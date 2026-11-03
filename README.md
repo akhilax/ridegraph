@@ -18,7 +18,7 @@ Ride-hailing apps have to answer questions that are really about connections. Wh
 
 ## Abstract
 
-RideGraph is a working ride-hailing web application for Chennai with three roles: rider, driver and admin. A rider picks a pickup point, a dropoff point and a ride type, sees a fare estimate and requests a ride. A driver in the same zone sees the request and accepts it, and later completes it. The rider then pays and rates the trip. An admin dashboard shows revenue, rides per zone, top drivers and cancellations. The data model has 11 node labels and 12 relationship types, derived from an ER model whose relational form was normalized to 3NF. The data is stored in Neo4j and queried in Cypher through a Flask REST API, and the interface is built in React. The API validates every input, uses conditional updates to prevent two drivers accepting the same ride, and stores passwords only as salted hashes. An automated test script checks the complete ride life cycle and the error cases.
+RideGraph is a working ride-hailing web application for Chennai with three roles: rider, driver and admin. A rider picks a pickup point, a dropoff point and a ride type, sees a fare estimate and requests a ride. A driver in the same zone sees the request and accepts it, and later completes it. The rider then pays and rates the trip. An admin dashboard shows revenue, rides per zone, top drivers and cancellations. The data model has 11 node labels and 12 relationship types, derived from an ER model whose relational form was normalized to 3NF. Data is stored in Neo4j and queried in Cypher through a Flask REST API, with a React interface. The API validates every input, uses conditional updates to prevent two drivers accepting the same ride, and stores passwords only as salted hashes. Automated tests cover the full ride life cycle and error cases.
 
 ## Functional features
 
@@ -46,9 +46,12 @@ RideGraph is a working ride-hailing web application for Chennai with three roles
 RideGraph/
 ├── README.md
 ├── database/
-│   ├── schema.cypher        # constraints (primary/unique keys) and indexes
-│   ├── sample_data.cypher   # synthetic Chennai demo data
-│   └── queries.cypher       # CRUD, traversals, aggregation, subqueries, "views", transactions
+│   ├── schema.cypher        # Neo4j (used by the app): constraints (primary/unique keys) and indexes
+│   ├── sample_data.cypher   # Neo4j: synthetic Chennai demo data
+│   ├── queries.cypher       # Neo4j: CRUD, traversals, aggregation, subqueries, "views", transactions
+│   ├── schema.sql           # same design as SQL tables (3NF): PK, FK, UNIQUE, CHECK, indexes, view
+│   ├── sample_data.sql      # same demo data as SQL INSERTs
+│   └── queries.sql          # SQL: INSERT/UPDATE/DELETE/SELECT, joins, GROUP BY, subqueries, view, transactions
 ├── src/
 │   ├── backend/             # Flask API: app.py, db.py, queries.py, seed.py, utils.py
 │   └── frontend/            # React source (src/) and pre-built site (dist/)
@@ -64,7 +67,7 @@ RideGraph/
 └── run_mac.command          # one-click setup and run (macOS)
 ```
 
-The project uses Neo4j, which was approved by the course faculty, so the database scripts are Cypher (`.cypher`) instead of SQL (`.sql`).
+The application uses Neo4j, which was approved by the course faculty, so its database scripts are Cypher (`.cypher`). The same design is also provided as executable SQL (`.sql`, tested with SQLite 3) so the relational schema, constraints and SQL operations can be run directly.
 
 ## Setup requirements
 
@@ -89,6 +92,13 @@ The project uses Neo4j, which was approved by the course faculty, so the databas
 Use **either** of these:
 * **Automatic:** `run_windows.bat` runs `src/backend/seed.py`, which creates the constraints and loads the data. Running it again is safe because it uses `MERGE`. Use `python seed.py --reset` to wipe the data and reload it.
 * **Manual:** in Neo4j Browser or the Query tab, run `database/schema.cypher` and then `database/sample_data.cypher`.
+* **Relational version (optional):** with SQLite 3 installed, run from the `database` folder:
+  ```bash
+  sqlite3 ridegraph.db < schema.sql
+  sqlite3 ridegraph.db < sample_data.sql
+  sqlite3 ridegraph.db < queries.sql
+  ```
+  The last five statements in `queries.sql` are deliberate constraint violations (duplicate key, duplicate email, invalid score, missing foreign key, same pickup and drop-off) and are expected to fail.
 
 ### 3. Run the application
 * **Windows:** double-click `run_windows.bat`. It creates a virtual environment, installs the packages, seeds the database, starts the server and opens **http://localhost:5000**.
